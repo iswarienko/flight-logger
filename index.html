@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Logger</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; }
+        .container { max-width: 400px; margin: 0 auto; background: white; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; padding: 16px; }
+        .title { font-size: 24px; font-weight: bold; }
+        .subtitle { color: #c7d2fe; margin-top: 4px; }
+        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 16px; background: #f1f5f9; }
+        .tab { background: #e2e8f0; padding: 12px; border-radius: 8px; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+        .tab.active { background: #4338ca; color: white; }
+        .tab-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+        .content { padding: 16px; }
+        .hours-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; background: #eef2ff; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+        .hours-item h3 { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+        .hours-item p { font-size: 20px; font-weight: bold; color: #4338ca; }
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #4338ca; box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1); }
+        .btn { background: #4338ca; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn:hover { background: #3730a3; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .flight-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+        .calc-display { background: #eef2ff; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .calc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .calc-main { font-size: 18px; font-weight: bold; color: #1e1b4b; }
+        .calc-sub { font-size: 14px; color: #4338ca; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">N12345</h1>
+            <p class="subtitle">Flight Logger</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')">
+                <div class="tab-icon">📊</div>
+                <span style="font-size: 12px;">Dashboard</span>
+            </button>
+            <button class="tab" onclick="showTab('log')">
+                <div class="tab-icon">➕</div>
+                <span style="font-size: 12px;">Log Flight</span>
+            </button>
+            <button class="tab" onclick="showTab('flights')">
+                <div class="tab-icon">✈️</div>
+                <span style="font-size: 12px;">Flights</span>
+            </button>
+            <button class="tab" onclick="showTab('maintenance')">
+                <div class="tab-icon">🔧</div>
+                <span style="font-size: 12px;">Maintenance</span>
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="content">
+            <div class="hours-grid">
+                <div class="hours-item">
+                    <h3>Hobbs Time</h3>
+                    <p id="hobbs-display">1249.4</p>
+                </div>
+                <div class="hours-item">
+                    <h3>Total Flight Hours</h3>
+                    <p id="total-display">1249.4</p>
+                </div>
+                <div class="hours-item">
+                    <h3>Left Tach</h3>
+                    <p id="left-display">1250.5</p>
+                </div>
+                <div class="hours-item">
+                    <h3>Right Tach</h3>
+                    <p id="right-display">1248.2</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 12px; font-size: 18px;">Recent Flights</h3>
+            <div id="recent-flights">
+                <div class="flight-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: bold;">2025-08-28</p>
+                            <p style="color: #6b7280; font-size: 14px;">KSAN → KLAS</p>
+                            <p style="color: #9ca3af; font-size: 12px;">Weekend trip to visit family</p>
+                        </div>
+                        <p style="color: #4338ca; font-weight: bold;">2.4h</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Flight Tab -->
+        <div id="log" class="content hidden">
+            <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Log New Flight</h2>
+            
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="flight-date">
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div>
+                        <label>Hobbs Start</label>
+                        <input type="number" step="0.1" id="hobbs-start" placeholder="1249.4">
+                    </div>
+                    <div>
+                        <label>Hobbs End</label>
+                        <input type="number" step="0.1" id="hobbs-end" oninput="calculateTimes()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div>
+                        <label>Left Tach Start</label>
+                        <input type="number" step="0.1" id="left-start" placeholder="1250.5">
+                    </div>
+                    <div>
+                        <label>Left Tach End</label>
+                        <input type="number" step="0.1" id="left-end" oninput="calculateTimes()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div>
+                        <label>Right Tach Start</label>
+                        <input type="number" step="0.1" id="right-start" placeholder="1248.2">
+                    </div>
+                    <div>
+                        <label>Right Tach End</label>
+                        <input type="number" step="0.1" id="right-end" oninput="calculateTimes()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div>
+                        <label>Total Flight Start</label>
+                        <input type="number" step="0.1" id="total-start" placeholder="1249.4">
+                    </div>
+                    <div>
+                        <label>Total Flight End</label>
+                        <input type="number" step="0.1" id="total-end" oninput="calculateTimes()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="calculations" class="calc-display" style="display: none;">
+                <div class="calc-row">
+                    <span>Hobbs Time:</span>
+                    <span id="hobbs-calc" class="calc-main">0.0 hours</span>
+                </div>
+                <div class="calc-row">
+                    <span>Left Tach:</span>
+                    <span id="left-calc" class="calc-sub">0.0 hours</span>
+                </div>
+                <div class="calc-row">
+                    <span>Right Tach:</span>
+                    <span id="right-calc" class="calc-sub">0.0 hours</span>
+                </div>
+                <div class="calc-row">
+                    <span>Total Flight:</span>
+                    <span id="total-calc" class="calc-sub">0.0 hours</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mission Type</label>
+                <select id="mission">
+                    <option>Personal</option>
+                    <option>Training</option>
+                    <option>Business</option>
+                    <option>Maintenance</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Mission Description</label>
+                <input type="text" id="mission-desc" placeholder="e.g., Weekend trip to visit family">
+            </div>
+
+            <div class="form-group">
+                <div class="form-row">
+                    <div>
+                        <label>From</label>
+                        <input type="text" id="from" placeholder="KSAN">
+                    </div>
+                    <div>
+                        <label>To</label>
+                        <input type="text" id="to" placeholder="KLAS">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Remarks</label>
+                <textarea id="remarks" placeholder="Weather, notes, etc." rows="3"></textarea>
+            </div>
+
+            <button class="btn" onclick="logFlight()">Log Flight</button>
+        </div>
+
+        <!-- Flights Tab -->
+        <div id="flights" class="content hidden">
+            <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Flight History</h2>
+            <div id="flight-history"></div>
+        </div>
+
+        <!-- Maintenance Tab -->
+        <div id="maintenance" class="content hidden">
+            <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Maintenance Tracking</h2>
+            <div class="flight-card">
+                <h3 style="font-weight: bold; margin-bottom: 8px;">Oil Change - Left Engine</h3>
+                <p style="color: #6b7280; font-size: 14px;">Due at 1300h (49.5h remaining)</p>
+            </div>
+            <div class="flight-card">
+                <h3 style="font-weight: bold; margin-bottom: 8px;">Oil Change - Right Engine</h3>
+                <p style="color: #6b7280; font-size: 14px;">Due at 1300h (51.8h remaining)</p>
+            </div>
+            <div class="flight-card">
+                <h3 style="font-weight: bold; margin-bottom: 8px;">Annual Inspection</h3>
+                <p style="color: #6b7280; font-size: 14px;">Due 2025-09-15</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize with today's date
+        document.getElementById('flight-date').value = new Date().toISOString().split('T')[0];
+        
+        let flights = JSON.parse(localStorage.getItem('flights') || '[]');
+        let aircraft = JSON.parse(localStorage.getItem('aircraft') || '{"hobbs": 1249.4, "total": 1249.4, "left": 1250.5, "right": 1248.2}');
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.remove('hidden');
+            event.target.closest('.tab').classList.add('active');
+            
+            if (tabName === 'flights') {
+                displayFlights();
+            }
+        }
+
+        function calculateTimes() {
+            const hobbsStart = parseFloat(document.getElementById('hobbs-start').value) || 0;
+            const hobbsEnd = parseFloat(document.getElementById('hobbs-end').value) || 0;
+            const leftStart = parseFloat(document.getElementById('left-start').value) || 0;
+            const leftEnd = parseFloat(document.getElementById('left-end').value) || 0;
+            const rightStart = parseFloat(document.getElementById('right-start').value) || 0;
+            const rightEnd = parseFloat(document.getElementById('right-end').value) || 0;
+            const totalStart = parseFloat(document.getElementById('total-start').value) || 0;
+            const totalEnd = parseFloat(document.getElementById('total-end').value) || 0;
+
+            if (hobbsStart && hobbsEnd) {
+                document.getElementById('calculations').style.display = 'block';
+                document.getElementById('hobbs-calc').textContent = `${(hobbsEnd - hobbsStart).toFixed(1)} hours`;
+            }
+            if (leftStart && leftEnd) {
+                document.getElementById('left-calc').textContent = `${(leftEnd - leftStart).toFixed(1)} hours`;
+            }
+            if (rightStart && rightEnd) {
+                document.getElementById('right-calc').textContent = `${(rightEnd - rightStart).toFixed(1)} hours`;
+            }
+            if (totalStart && totalEnd) {
+                document.getElementById('total-calc').textContent = `${(totalEnd - totalStart).toFixed(1)} hours`;
+            }
+        }
+
+        function logFlight() {
+            const hobbsStart = parseFloat(document.getElementById('hobbs-start').value);
+            const hobbsEnd = parseFloat(document.getElementById('hobbs-end').value);
+            
+            if (!hobbsStart || !hobbsEnd) {
+                alert('Please enter Hobbs start and end times');
+                return;
+            }
+
+            const flight = {
+                id: Date.now(),
+                date: document.getElementById('flight-date').value,
+                hobbsStart: hobbsStart,
+                hobbsEnd: hobbsEnd,
+                flightTime: hobbsEnd - hobbsStart,
+                leftStart: parseFloat(document.getElementById('left-start').value) || 0,
+                leftEnd: parseFloat(document.getElementById('left-end').value) || 0,
+                rightStart: parseFloat(document.getElementById('right-start').value) || 0,
+                rightEnd: parseFloat(document.getElementById('right-end').value) || 0,
+                totalStart: parseFloat(document.getElementById('total-start').value) || 0,
+                totalEnd: parseFloat(document.getElementById('total-end').value) || 0,
+                mission: document.getElementById('mission').value,
+                missionDesc: document.getElementById('mission-desc').value,
+                from: document.getElementById('from').value.toUpperCase(),
+                to: document.getElementById('to').value.toUpperCase(),
+                remarks: document.getElementById('remarks').value
+            };
+
+            flights.unshift(flight);
+            localStorage.setItem('flights', JSON.stringify(flights));
+
+            // Update aircraft totals
+            aircraft.hobbs = hobbsEnd;
+            aircraft.total = flight.totalEnd || hobbsEnd;
+            aircraft.left = flight.leftEnd || aircraft.left;
+            aircraft.right = flight.rightEnd || aircraft.right;
+            localStorage.setItem('aircraft', JSON.stringify(aircraft));
+
+            updateDashboard();
+            
+            // Reset form for next flight
+            document.getElementById('hobbs-start').value = hobbsEnd;
+            document.getElementById('left-start').value = flight.leftEnd || '';
+            document.getElementById('right-start').value = flight.rightEnd || '';
+            document.getElementById('total-start').value = flight.totalEnd || '';
+            
+            ['hobbs-end', 'left-end', 'right-end', 'total-end', 'mission-desc', 'from', 'to', 'remarks'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            
+            document.getElementById('calculations').style.display = 'none';
+            
+            alert('Flight logged successfully!');
+            showTab('flights');
+        }
+
+        function updateDashboard() {
+            document.getElementById('hobbs-display').textContent = aircraft.hobbs.toFixed(1);
+            document.getElementById('total-display').textContent = aircraft.total.toFixed(1);
+            document.getElementById('left-display').textContent = aircraft.left.toFixed(1);
+            document.getElementById('right-display').textContent = aircraft.right.toFixed(1);
+        }
+
+        function displayFlights() {
+            const container = document.getElementById('flight-history');
+            container.innerHTML = flights.map(flight => `
+                <div class="flight-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <div>
+                            <p style="font-weight: bold;">${flight.date}</p>
+                            <p style="color: #6b7280; font-size: 14px;">Hobbs: ${flight.hobbsStart} → ${flight.hobbsEnd}</p>
+                            <p style="color: #9ca3af; font-size: 12px;">${flight.missionDesc}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="color: #4338ca; font-weight: bold;">${flight.flightTime.toFixed(1)}h</p>
+                            <p style="color: #9ca3af; font-size: 12px;">${flight.mission}</p>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">${flight.from} → ${flight.to}</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px; color: #9ca3af;">
+                        <p>Left Tach: ${flight.leftStart} → ${flight.leftEnd} (${(flight.leftEnd - flight.leftStart).toFixed(1)}h)</p>
+                        <p>Right Tach: ${flight.rightStart} → ${flight.rightEnd} (${(flight.rightEnd - flight.rightStart).toFixed(1)}h)</p>
+                    </div>
+                    ${flight.totalStart && flight.totalEnd ? `<p style="font-size: 12px; color: #9ca3af; margin-top: 4px;">Total Flight: ${flight.totalStart} → ${flight.totalEnd} (${(flight.totalEnd - flight.totalStart).toFixed(1)}h)</p>` : ''}
+                    ${flight.remarks ? `<p style="color: #6b7280; font-size: 14px; margin-top: 8px; font-style: italic;">${flight.remarks}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        updateDashboard();
+        displayFlights();
+    </script>
+</body>
+</html>
