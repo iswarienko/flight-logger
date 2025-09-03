@@ -140,10 +140,12 @@
 
         <div id="log" class="content hidden">
             <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">Log New Flight</h2>
+            
             <div class="form-group">
                 <label>Date</label>
                 <input type="date" id="flight-date" onchange="checkAutoPopulate()">
             </div>
+
             <div class="form-group">
                 <label>Hobbs Time</label>
                 <div class="form-row-3">
@@ -152,6 +154,7 @@
                     <div class="time-total" id="hobbs-total">0.0h</div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Left Tach</label>
                 <div class="form-row-3">
@@ -160,6 +163,7 @@
                     <div class="time-total" id="left-total">0.0h</div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Right Tach</label>
                 <div class="form-row-3">
@@ -168,6 +172,7 @@
                     <div class="time-total" id="right-total">0.0h</div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Total Flight Hours</label>
                 <div class="form-row-3">
@@ -176,6 +181,7 @@
                     <div class="time-total" id="total-flight-total">0.0h</div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Mission Type</label>
                 <select id="mission">
@@ -185,20 +191,24 @@
                     <option value="Maintenance">Maintenance</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label>Mission Description</label>
                 <input type="text" id="mission-desc" placeholder="e.g., Weekend trip to visit family">
             </div>
+
             <div class="form-group">
                 <div class="form-row">
                     <div><label>From</label><input type="text" id="from" placeholder="KSAN" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()"></div>
                     <div><label>To</label><input type="text" id="to" placeholder="KLAS" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()"></div>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Remarks</label>
                 <textarea id="remarks" placeholder="Weather, notes, etc." rows="3"></textarea>
             </div>
+
             <button class="btn" onclick="logFlight()">Log Flight</button>
         </div>
 
@@ -222,6 +232,7 @@
         let editingFlightId = null;
         let editingMaintenanceId = null;
         let isOnline = navigator.onLine;
+        let pendingSync = false;
 
         window.onload = function() {
             document.getElementById('flight-date').value = new Date().toISOString().split('T')[0];
@@ -447,233 +458,4 @@
                 <div class="form-group"><label>Date Performed</label><input type="date" id="edit-maintenance-date" value="${new Date().toISOString().split('T')[0]}"></div>
                 <div class="form-group"><label>Hobbs Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-hobbs" placeholder="Current Hobbs"><input type="number" step="0.1" id="edit-maintenance-hobbs-interval" placeholder="Interval (e.g., 50)"></div></div>
                 <div class="form-group"><label>Left Tach Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-left" placeholder="Current Left Tach"><input type="number" step="0.1" id="edit-maintenance-left-interval" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Right Tach Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-right" placeholder="Current Right Tach"><input type="number" step="0.1" id="edit-maintenance-right-interval" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Total Flight Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-total" placeholder="Current Total Flight"><input type="number" step="0.1" id="edit-maintenance-total-interval" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Notes</label><textarea id="edit-maintenance-notes" placeholder="Additional maintenance notes" rows="3"></textarea></div>
-            `;
-            
-            document.getElementById('maintenance-editor-content').innerHTML = editorContent;
-            document.getElementById('maintenance-modal').classList.remove('hidden');
-        }
-
-        function editMaintenanceItem(maintenanceId) {
-            const item = maintenanceItems.find(m => m.id === maintenanceId);
-            if (!item) return;
-            editingMaintenanceId = maintenanceId;
-            
-            const editorContent = `
-                <div class="form-group"><label>Maintenance Item Name</label><input id="edit-maintenance-name" value="${item.name}"></div>
-                <div class="form-group"><label>Type</label><select id="edit-maintenance-type"><option value="Airframe" ${item.type === 'Airframe' ? 'selected' : ''}>Airframe</option><option value="Engine" ${item.type === 'Engine' ? 'selected' : ''}>Engine</option><option value="Propeller" ${item.type === 'Propeller' ? 'selected' : ''}>Propeller</option></select></div>
-                <div class="form-group"><label>Date Performed</label><input type="date" id="edit-maintenance-date" value="${item.date}"></div>
-                <div class="form-group"><label>Hobbs Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-hobbs" value="${item.hobbsHours || ''}" placeholder="Current Hobbs"><input type="number" step="0.1" id="edit-maintenance-hobbs-interval" value="${item.hobbsInterval || ''}" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Left Tach Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-left" value="${item.leftTachHours || ''}" placeholder="Current Left Tach"><input type="number" step="0.1" id="edit-maintenance-left-interval" value="${item.leftTachInterval || ''}" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Right Tach Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-right" value="${item.rightTachHours || ''}" placeholder="Current Right Tach"><input type="number" step="0.1" id="edit-maintenance-right-interval" value="${item.rightTachInterval || ''}" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Total Flight Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-total" value="${item.totalFlightHours || ''}" placeholder="Current Total Flight"><input type="number" step="0.1" id="edit-maintenance-total-interval" value="${item.totalFlightInterval || ''}" placeholder="Interval"></div></div>
-                <div class="form-group"><label>Notes</label><textarea id="edit-maintenance-notes" rows="3">${item.notes || ''}</textarea></div>
-            `;
-            
-            document.getElementById('maintenance-editor-content').innerHTML = editorContent;
-            document.getElementById('maintenance-modal').classList.remove('hidden');
-        }
-
-        function saveMaintenanceItem() {
-            const item = {
-                id: editingMaintenanceId || Date.now(),
-                aircraft: currentAircraft,
-                name: document.getElementById('edit-maintenance-name').value,
-                type: document.getElementById('edit-maintenance-type').value,
-                date: document.getElementById('edit-maintenance-date').value,
-                hobbsHours: parseFloat(document.getElementById('edit-maintenance-hobbs').value) || null,
-                hobbsInterval: parseFloat(document.getElementById('edit-maintenance-hobbs-interval').value) || null,
-                leftTachHours: parseFloat(document.getElementById('edit-maintenance-left').value) || null,
-                leftTachInterval: parseFloat(document.getElementById('edit-maintenance-left-interval').value) || null,
-                rightTachHours: parseFloat(document.getElementById('edit-maintenance-right').value) || null,
-                rightTachInterval: parseFloat(document.getElementById('edit-maintenance-right-interval').value) || null,
-                totalFlightHours: parseFloat(document.getElementById('edit-maintenance-total').value) || null,
-                totalFlightInterval: parseFloat(document.getElementById('edit-maintenance-total-interval').value) || null,
-                notes: document.getElementById('edit-maintenance-notes').value
-            };
-
-            if (!item.name.trim()) {
-                alert('Please enter a maintenance item name');
-                return;
-            }
-
-            if (editingMaintenanceId) {
-                const index = maintenanceItems.findIndex(m => m.id === editingMaintenanceId);
-                if (index !== -1) maintenanceItems[index] = item;
-            } else {
-                maintenanceItems.push(item);
-            }
-
-            localStorage.setItem('maintenanceItems', JSON.stringify(maintenanceItems));
-            closeMaintenanceEditor();
-            displayMaintenanceItems();
-            updateDashboard();
-            alert(editingMaintenanceId ? 'Maintenance item updated!' : 'Maintenance item added!');
-            editingMaintenanceId = null;
-        }
-
-        function deleteMaintenanceItem() {
-            if (!editingMaintenanceId || !confirm('Delete this maintenance item?')) return;
-            maintenanceItems = maintenanceItems.filter(m => m.id !== editingMaintenanceId);
-            localStorage.setItem('maintenanceItems', JSON.stringify(maintenanceItems));
-            editingMaintenanceId = null;
-            closeMaintenanceEditor();
-            displayMaintenanceItems();
-            updateDashboard();
-            alert('Maintenance item deleted!');
-        }
-
-        function closeMaintenanceEditor() {
-            document.getElementById('maintenance-modal').classList.add('hidden');
-            editingMaintenanceId = null;
-        }
-
-        function getMaintenanceStatus(item) {
-            const currentAircraftData = aircraft[currentAircraft] || { hobbs: 0, total: 0, left: 0, right: 0 };
-            let status = 'ok';
-            let dueItems = [];
-
-            if (item.hobbsHours && item.hobbsInterval) {
-                const nextDue = item.hobbsHours + item.hobbsInterval;
-                const remaining = nextDue - currentAircraftData.hobbs;
-                if (remaining <= 0) status = 'overdue';
-                else if (remaining <= 10) status = 'due-soon';
-                dueItems.push(`Hobbs: ${remaining.toFixed(1)}h remaining`);
-            }
-
-            if (item.leftTachHours && item.leftTachInterval) {
-                const nextDue = item.leftTachHours + item.leftTachInterval;
-                const remaining = nextDue - currentAircraftData.left;
-                if (remaining <= 0) status = 'overdue';
-                else if (remaining <= 10 && status === 'ok') status = 'due-soon';
-                dueItems.push(`Left Tach: ${remaining.toFixed(1)}h remaining`);
-            }
-
-            if (item.rightTachHours && item.rightTachInterval) {
-                const nextDue = item.rightTachHours + item.rightTachInterval;
-                const remaining = nextDue - currentAircraftData.right;
-                if (remaining <= 0) status = 'overdue';
-                else if (remaining <= 10 && status === 'ok') status = 'due-soon';
-                dueItems.push(`Right Tach: ${remaining.toFixed(1)}h remaining`);
-            }
-
-            if (item.totalFlightHours && item.totalFlightInterval) {
-                const nextDue = item.totalFlightHours + item.totalFlightInterval;
-                const remaining = nextDue - currentAircraftData.total;
-                if (remaining <= 0) status = 'overdue';
-                else if (remaining <= 10 && status === 'ok') status = 'due-soon';
-                dueItems.push(`Total Flight: ${remaining.toFixed(1)}h remaining`);
-            }
-
-            return { status, dueItems };
-        }
-
-        function displayMaintenanceItems() {
-            const container = document.getElementById('maintenance-items');
-            const alertsContainer = document.getElementById('maintenance-alerts');
-            
-            const currentAircraftItems = maintenanceItems.filter(item => item.aircraft === currentAircraft);
-            
-            if (currentAircraftItems.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No maintenance items for this aircraft. Click "Add New Maintenance Item" to get started.</p>';
-                if (alertsContainer) alertsContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No maintenance alerts</p>';
-                return;
-            }
-
-            const maintenanceHTML = currentAircraftItems.map(item => {
-                const { status, dueItems } = getMaintenanceStatus(item);
-                return `
-                    <div class="maintenance-card ${status}" onclick="editMaintenanceItem(${item.id})">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                            <div>
-                                <h3 style="font-weight: bold; margin-bottom: 4px;">${item.name}<span class="maintenance-type-badge ${item.type.toLowerCase()}">${item.type}</span></h3>
-                                <p style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">Last performed: ${item.date}</p>
-                                ${dueItems.map(due => `<p style="color: #6b7280; font-size: 12px;">${due}</p>`).join('')}
-                            </div>
-                            <div style="text-align: right;">
-                                ${status === 'overdue' ? '<p style="color: #dc2626; font-weight: bold; font-size: 12px;">OVERDUE</p>' : ''}
-                                ${status === 'due-soon' ? '<p style="color: #f59e0b; font-weight: bold; font-size: 12px;">DUE SOON</p>' : ''}
-                                ${status === 'ok' ? '<p style="color: #10b981; font-weight: bold; font-size: 12px;">OK</p>' : ''}
-                            </div>
-                        </div>
-                        ${item.notes ? `<p style="color: #6b7280; font-size: 14px; font-style: italic; margin-top: 8px;">${item.notes}</p>` : ''}
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = maintenanceHTML;
-
-            if (alertsContainer) {
-                const urgentItems = currentAircraftItems.filter(item => {
-                    const { status } = getMaintenanceStatus(item);
-                    return status === 'overdue' || status === 'due-soon';
-                });
-
-                if (urgentItems.length === 0) {
-                    alertsContainer.innerHTML = '<p style="color: #10b981; text-align: center;">All maintenance current</p>';
-                } else {
-                    const alertsHTML = urgentItems.slice(0, 3).map(item => {
-                        const { status, dueItems } = getMaintenanceStatus(item);
-                        return `
-                            <div class="maintenance-card ${status}" onclick="editMaintenanceItem(${item.id})">
-                                <h4 style="font-weight: bold; margin-bottom: 4px;">${item.name}</h4>
-                                <p style="color: #6b7280; font-size: 12px;">${dueItems[0] || 'Check maintenance'}</p>
-                            </div>
-                        `;
-                    }).join('');
-                    alertsContainer.innerHTML = alertsHTML;
-                }
-            }
-        }
-
-        function updateDashboard() {
-            const current = aircraft[currentAircraft] || { hobbs: 0, total: 0, left: 0, right: 0 };
-            document.getElementById('hobbs-display').textContent = current.hobbs.toFixed(1);
-            document.getElementById('total-display').textContent = current.total.toFixed(1);
-            document.getElementById('left-display').textContent = current.left.toFixed(1);
-            document.getElementById('right-display').textContent = current.right.toFixed(1);
-            displayMaintenanceItems();
-        }
-
-        function displayFlights() {
-            const container = document.getElementById('flight-history');
-            const recentContainer = document.getElementById('recent-flights');
-            
-            const flightHTML = flights.map(flight => `
-                <div class="flight-card" onclick="editFlight(${flight.id})">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                        <div>
-                            <p style="font-weight: bold;">${flight.date} (${flight.aircraft || currentAircraft})</p>
-                            <p style="color: #6b7280; font-size: 14px;">Hobbs: ${flight.hobbsStart} → ${flight.hobbsEnd}</p>
-                            <p style="color: #9ca3af; font-size: 12px;">${flight.missionDesc || ''}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <p style="color: #4338ca; font-weight: bold;">${flight.flightTime.toFixed(1)}h</p>
-                            <p style="color: #9ca3af; font-size: 12px;">${flight.mission}</p>
-                        </div>
-                    </div>
-                    <p style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">${flight.from || ''} → ${flight.to || ''}</p>
-                    ${flight.leftStart && flight.leftEnd ? `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px; color: #9ca3af; margin-bottom: 4px;"><p>Left: ${flight.leftStart}→${flight.leftEnd} (${(flight.leftEnd - flight.leftStart).toFixed(1)}h)</p><p>Right: ${flight.rightStart || 0}→${flight.rightEnd || 0} (${((flight.rightEnd || 0) - (flight.rightStart || 0)).toFixed(1)}h)</p></div>` : ''}
-                    ${flight.remarks ? `<p style="color: #6b7280; font-size: 14px; font-style: italic;">${flight.remarks}</p>` : ''}
-                </div>
-            `).join('');
-            
-            if (container) container.innerHTML = flightHTML;
-            if (recentContainer) recentContainer.innerHTML = flights.slice(0, 3).map(flight => `
-                <div class="flight-card" onclick="editFlight(${flight.id})">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <p style="font-weight: bold;">${flight.date}</p>
-                            <p style="color: #6b7280; font-size: 14px;">${flight.from || ''} → ${flight.to || ''}</p>
-                            <p style="color: #9ca3af; font-size: 12px;">${flight.missionDesc || ''}</p>
-                        </div>
-                        <p style="color: #4338ca; font-weight: bold;">${flight.flightTime.toFixed(1)}h</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-    </script>
-</body>
-</html>
+                <div class="form-group"><label>Right Tach Hours</label><div class="form-row"><input type="number" step="0.1" id="edit-maintenance-right" placeholder="Current
